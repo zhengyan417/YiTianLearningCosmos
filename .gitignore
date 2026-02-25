@@ -206,32 +206,3 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-
-# Local environment files
-.env.local
-.env.*.local
-
-# Log files
-*.log
-logs/
-
-# Temporary files
-*.tmp
-*.temp
-
-# System files
-.DS_Store
-Thumbs.db
-
-# Model files and large data (should be documented separately)
-models/
-storage_faiss/
-*.bin
-*.pt
-*.pth
-*.onnx
-
-# LLM related files
-*.gguf
-*.safetensors
-checkpoints/

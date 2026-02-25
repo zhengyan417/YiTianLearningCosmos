@@ -28,15 +28,20 @@
 - **功能**：文档解析与智能问答
 - **特点**：支持PDF等格式，精确行号引用，对话历史保持
 
-### 3. 医生智能体 (Doctor Agent)
+### 3. RAG智能体 (RAG Agent)
 - **框架**：LlamaIndex + RAG
-- **功能**：中医专业知识问答
-- **特点**：基于医学知识库的精准检索和引用
+- **功能**：检索文献辅助智能体进行回答
+- **特点**：采用RAG进行特定内容的检索与生成
 
 ### 4. 代码智能体 (Code Agent)
 - **框架**：LangChain
 - **功能**：代码生成与编程辅助
 - **特点**：支持多种编程语言，可调用远程代码服务
+
+### 5. 搜索智能体（Search Agent）
+- **框架**: LangChain
+- **功能**: 搜索用户个人信息、执行网络检索
+- **特点**: 采用MCP对数据库与网络检索工具进行交互
 
 ## 🛡️ 错误处理与日志系统
 
@@ -83,9 +88,13 @@ python file_parse_agent\__main__.py --host localhost --port 10001
 # 启动代码智能体
 python code_agent\__main__.py --host localhost --port 10002
 
-# 启动医生智能体
-python docter_agent\__main__.py --host localhost --port 10003
+# 启动RAG智能体
+python rag_agent\__main__.py --host localhost --port 10003
 
+# 启动检索智能体
+cd search_agent
+docker-compose up -d
+python __main__.py --host localhost --port 10004
 ```
 
 ### 3. 启动客户端
@@ -111,6 +120,7 @@ adk web --port 8030
 - 帮我解析这个PDF文件:<文件路径名>                                       
 - 帮我生成懒线段树的模板代码，用python实现，直接返回给我代码
 - 我出现了发热、腹痛、头晕、气寒，可能是什么症状？
+- 上海的天气怎么样?
 
 ## 📁 项目结构
 
@@ -120,8 +130,9 @@ adk web --port 8030
 │   └── client_host_agent/   # 客户端主机代理
 ├── cli_client/              # 命令行客户端(用于测试单个远程A2A服务器)
 ├── code_agent/              # 代码生成智能体
-├── docter_agent/            # 医学RAG智能体
+├── rag_agent/            # RAG智能体
 ├── file_parse_agent/        # 文件解析智能体
+├── search_agent/        # 搜索智能体
 ├── README.md               # 项目说明文档
 └── requirements.txt         # 依赖包列表
 ```

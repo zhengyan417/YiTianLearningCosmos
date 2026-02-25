@@ -1,0 +1,24 @@
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15
+    container_name: search-agent-postgres
+    environment:
+      POSTGRES_DB: search_agent_database
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./search_agent/init_database.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

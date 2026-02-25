@@ -17,7 +17,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core import setup_logging, get_logger
 from file_parse_agent.agent import ParseAndChat
-from docter_agent.agent import DoctorRAGWorkflow
+from rag_agent.agent import DoctorRAGWorkflow
 from code_agent.agent import CodeAgent
 
 # 配置日志

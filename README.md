@@ -6,13 +6,15 @@
 
 一个基于A2A协议的多智能体学习辅助系统，专为学生设计的智能化学习助手平台。
 
+![依天学境初步架构](assets/最初版本框架.png "依天学境初步架构")
+
 ## 🌟 项目特色
 
+- **引入MCP与A2A**：支持智能体与工具以及智能体之间的通信
 - **多模态支持**：支持文本、文件等多种输入形式
 - **RAG增强检索**：基于检索增强生成的知识问答系统
 - **本地大模型**：支持本地部署的大语言模型调用
-- **多智能体协作**：采用A2A协议实现智能体间高效通信
-- **专业领域支持**：涵盖代码生成、文档解析、医学知识等多个领域
+- **专业领域支持**：涵盖代码生成、文档解析、统一管理等多个领域
 - **企业级错误处理**：完善的异常处理体系和统一日志管理
 - **生产就绪**：包含重试机制、健康检查和监控支持
 
@@ -42,6 +44,11 @@
 - **框架**: LangChain
 - **功能**: 搜索用户个人信息、执行网络检索
 - **特点**: 采用MCP对数据库与网络检索工具进行交互
+
+### 6. 研究智能体（Research Agent）
+- **框架**: LangChain
+- **功能**: 进行相关内容的研究(支持互联网检索相关内容)
+- **特点**: 通过沙盒创建后端来生成研究预案和调研文件
 
 ## 🛡️ 错误处理与日志系统
 
@@ -93,8 +100,11 @@ python rag_agent\__main__.py --host localhost --port 10003
 
 # 启动检索智能体
 cd search_agent
-docker-compose up -d
+docker-compose up -d # 启动数据库
 python __main__.py --host localhost --port 10004
+
+# 启动研究智能体
+python research_agent\__main__.py --host localhost --port 10005
 ```
 
 ### 3. 启动客户端
@@ -117,10 +127,11 @@ adk web --port 8030
 - 你这个多智能体系统有什么功能？
 
 ### 任务测试
-- 帮我解析这个PDF文件:<文件路径名>                                       
+- 帮我解析这个PDF文件:<文件路径>，告诉我Transformer的经典架构有多少个参数？                                    
 - 帮我生成懒线段树的模板代码，用python实现，直接返回给我代码
 - 我出现了发热、腹痛、头晕、气寒，可能是什么症状？
-- 上海的天气怎么样?
+- 查询一下小明的专业和学历
+- 帮我研究一下A2A与MCP协议的关系
 
 ## 📁 项目结构
 
@@ -133,34 +144,9 @@ adk web --port 8030
 ├── rag_agent/            # RAG智能体
 ├── file_parse_agent/        # 文件解析智能体
 ├── search_agent/        # 搜索智能体
+├── research_agent/        # 研究智能体
 ├── README.md               # 项目说明文档
 └── requirements.txt         # 依赖包列表
-```
-
-## ⚙️ 配置说明
-
-主要环境变量配置：
-
-```env
-# DashScope API密钥
-DASHSCOPE_API_KEY=your_api_key_here
-
-# Llama Cloud API密钥
-LLAMA_CLOUD_API_KEY=your_api_key_here
-
-# DeepSeek API配置
-DEEPSEEK_API_KEY=your_api_key_here
-DEEPSEEK_BASE_URL=https://api.deepseek.com
-
-# 本地模型路径
-LLM_MODEL_PATH=/path/to/your/model
-EMBED_PATH=/path/to/embedding/model
-STORAGE_DIR=/path/to/storage
-
-# 智能体服务URL
-FILE_PARSE_AGENT_URL=http://localhost:10001
-CODE_AGENT_URL=http://localhost:10002
-DOCTOR_AGENT_URL=http://localhost:10003
 ```
 
 ## 🤝 贡献指南

@@ -76,7 +76,7 @@ async def cli( # 命令行函数
     print(f'Will use headers: {headers}') # 打印头部参数
 
     # 构建http客户端
-    async with httpx.AsyncClient(timeout=300, headers=headers) as httpx_client:
+    async with httpx.AsyncClient(timeout=3000, headers=headers) as httpx_client:
         # 1. 获取Agent card
         card_resolver = A2ACardResolver(httpx_client, agent) # 创建智能体卡片解析器
         card = await card_resolver.get_agent_card() # 获取智能体卡片

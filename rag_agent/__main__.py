@@ -31,14 +31,14 @@ def main(host, port): # 主函数
 
         skill = AgentSkill( # 智能体技能
             id='doctor_rag_query', # 技能ID
-            name='医生RAG查询', # 技能名称
+            name='RAG查询', # 技能名称
             description='基于医学知识库进行查询并回答健康问题', # 技能描述
             tags=['medical', 'health', 'rag', 'doctor'], # 技能标签
             examples=['我最近经常头痛怎么办？', '高血压有哪些症状？'], # 技能示例
         )
 
         agent_card = AgentCard( # 智能体卡片
-            name='医生智能体', # 智能体名称
+            name='RAG智能体', # 智能体名称
             description='基于医学知识库的专业医生助手，可以回答健康和医疗相关问题', # 智能体描述
             url=f'http://{host}:{port}/', # 智能体URL
             version='1.0.0', # 智能体版本

@@ -1,9 +1,12 @@
 import os
-
+import warnings
+warnings.filterwarnings("ignore")
 from dotenv import load_dotenv
 
 from .host_agent import HostAgent
 from httpx import AsyncClient, Timeout
+
+
 
 load_dotenv() # 加载环境变量
 
@@ -12,5 +15,6 @@ root_agent = HostAgent([ # 创建智能体
     os.getenv("CODE_AGENT_URL"), # 代码智能体
     os.getenv("RAG_AGENT_URL"), # RAG智能体
     os.getenv("SEARCH_AGENT_URL"), # 搜索智能体
+    os.getenv("RESEARCH_AGENT_URL"), # 研究智能体
     ],
     http_client=AsyncClient(timeout=Timeout(300.0, connect=10.0))).create_agent() # 创建智能体

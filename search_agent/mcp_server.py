@@ -12,7 +12,7 @@ from mcp.server.lowlevel import server
 # 创建 MCP 服务器
 mcp = FastMCP("Search Agent Server",
               debug=True,
-              host="0.0.0.0",
+              host="127.0.0.0",
               port=8004)
 
 # 数据库连接配置
@@ -317,5 +317,5 @@ def log_user_query(username: str, query_text: str, query_type: str = "general") 
 if __name__ == "__main__":
     # 本地测试
     print("启动Search Agent MCP服务器...")
-    print("服务器将在 0.0.0.0:8004 上监听")
+    print("服务器将在 127.0.0.0:8004 上监听")
     mcp.run()

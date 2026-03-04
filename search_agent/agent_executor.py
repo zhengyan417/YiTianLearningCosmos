@@ -15,6 +15,8 @@ from a2a.types import (
 from agent import SearchAgent
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 
+from core.a2a_monitor import monitor_agent_execution
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -24,6 +26,7 @@ class SearchAgentExecutor(AgentExecutor):
     def __init__(self):
         self.agent = SearchAgent()
 
+    @monitor_agent_execution
     async def execute(
         self, context: RequestContext, event_queue: EventQueue
     ) -> None:

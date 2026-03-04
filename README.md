@@ -1,168 +1,139 @@
-# 依天学境 (YiTian Learning Cosmos) 
+# 依天学境 (YiTian Learning Cosmos)
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 [![A2A Protocol](https://img.shields.io/badge/A2A-Protocol-orange.svg)](https://github.com/a2a-protocol)
 
-一个基于A2A协议的多智能体学习辅助系统，专为学生设计的智能化学习助手平台。
+一个基于 A2A 协议的多智能体学习辅助手册，面向教学与研究场景，提供文件解析、代码生成、RAG 检索、通用检索与科研助手等能力，并内置通信审计与统一错误处理体系。
 
-![依天学境初步架构](assets/最初版本框架.png "依天学境初步架构")
+## 核心特性
+- A2A 互通：客户端与多服务端智能体统一采用 A2A 协议，支持 JSON-RPC、HTTP JSON 传输与推送通知。
+- 多模态输入：文本、文件（PDF、DOC、图片等）均可作为任务输入。
+- 任务编排：客户端 Host Agent 负责分派任务至远程智能体，支持流式输出与断点恢复。
+- 企业级可观测性：统一异常体系 + 轮转日志 + A2A 通信监控模块。
+- 可扩展：各智能体独立运行，端口可配置，便于横向扩展或替换模型。
 
-## 🌟 项目特色
+## 模块一览
+| 角色 | 目录 | 默认端口 | 技术栈 | 主要能力 |
+| --- | --- | --- | --- | --- |
+| 文件解析智能体 | `file_parse_agent` | 10001 | LlamaIndex | 文档解析、内容抽取、流式输出 |
+| 代码智能体 | `code_agent` | 10002 | LangChain | 代码生成与编程辅助 |
+| RAG 智能体（Doctor RAG） | `rag_agent` | 10003 | LlamaIndex + RAG | 垂直知识检索问答 |
+| 搜索智能体 | `search_agent` | 10004 | LangChain | 结构化 / 网页检索，支持数据库 |
+| 研究智能体 | `research_agent` | 10005 | LangChain | 研究报告生成、资料整合 |
+| 客户端 Host Agent | `a2a_client/client_host_agent` | — | A2A Client + Google ADK | 任务拆解、远程智能体路由 |
+| CLI 客户端 | `cli_client` | — | asyncclick + A2A Client | 交互式命令行体验 |
 
-- **引入MCP与A2A**：支持智能体与工具以及智能体之间的通信
-- **多模态支持**：支持文本、文件等多种输入形式
-- **RAG增强检索**：基于检索增强生成的知识问答系统
-- **本地大模型**：支持本地部署的大语言模型调用
-- **专业领域支持**：涵盖代码生成、文档解析、统一管理等多个领域
-- **企业级错误处理**：完善的异常处理体系和统一日志管理
-- **生产就绪**：包含重试机制、健康检查和监控支持
+## 架构概览
+- 前端 / CLI 通过 A2A 客户端发送任务消息，包含上下文 ID、任务 ID、消息 ID，支持附件。
+- Host Agent 依据配置选择合适的远程智能体并转发，支持流式响应。
+- 各服务端智能体均基于 `a2a.server` 适配器暴露 API，使用 `AgentExecutor` 执行逻辑。
+- `core/a2a_monitor.py` 在客户端和服务端两端埋点，记录完整通信事件（含流式分块）。
 
-## 🤖 核心智能体
-
-### 1. 客户端智能体 (Client Host Agent)
-- **框架**：ADK框架
-- **功能**：用户交互入口，智能路由和协调其他智能体
-- **特点**：统一接口管理，支持多轮对话记忆
-
-### 2. 文件解析智能体 (File Parse Agent)
-- **框架**：LlamaIndex
-- **功能**：文档解析与智能问答
-- **特点**：支持PDF等格式，精确行号引用，对话历史保持
-
-### 3. RAG智能体 (RAG Agent)
-- **框架**：LlamaIndex + RAG
-- **功能**：检索文献辅助智能体进行回答
-- **特点**：采用RAG进行特定内容的检索与生成
-
-### 4. 代码智能体 (Code Agent)
-- **框架**：LangChain
-- **功能**：代码生成与编程辅助
-- **特点**：支持多种编程语言，可调用远程代码服务
-
-### 5. 搜索智能体（Search Agent）
-- **框架**: LangChain
-- **功能**: 搜索用户个人信息、执行网络检索
-- **特点**: 采用MCP对数据库与网络检索工具进行交互
-
-### 6. 研究智能体（Research Agent）
-- **框架**: LangChain
-- **功能**: 进行相关内容的研究(支持互联网检索相关内容)
-- **特点**: 通过沙盒创建后端来生成研究预案和调研文件
-
-## 🛡️ 错误处理与日志系统
-
-项目采用现代化的企业级错误处理和日志管理体系：
-
-### 统一异常处理
-- **自定义异常类**：定义了完整的业务异常体系
-- **装饰器支持**：提供 `@handle_exceptions` 装饰器简化异常处理
-- **重试机制**：内置 `@retry_on_failure` 装饰器支持自动重试
-- **上下文日志**：`@with_logging_context` 提供丰富的日志上下文
-
-### 日志管理特性
-- **多格式支持**：标准、详细、JSON三种日志格式
-- **日志轮转**：自动日志文件分割和清理
-- **彩色输出**：终端环境下友好的彩色日志显示
-- **结构化日志**：JSON格式便于日志分析和监控
-
-
-## 🚀 快速开始
-
-### 1. 环境准备
-
+## 快速开始
+1. 准备环境  
+   - Python 3.12+  
+   - 可选：Docker（用于 search_agent 的数据库）  
+2. 安装依赖  
 ```bash
-# 激活虚拟环境（推荐）
-# Windows:
+python -m venv .venv
+# Windows
 .venv\Scripts\activate
-# Linux/Mac:
+# Linux/Mac
 source .venv/bin/activate
-
-# 安装依赖
 pip install -r requirements.txt
-
-# 配置环境变量
+```
+3. 配置环境变量  
+```bash
 cp .env.example .env
-# 编辑.env文件，填入必要的API密钥和配置
+# 填写 LLM/API 密钥、端口、数据库等配置
 ```
-
-### 2. 启动服务端
-
+4. 启动服务端（按需选择）  
 ```bash
-# 启动文件解析智能体
-python file_parse_agent\__main__.py --host localhost --port 10001
-
-# 启动代码智能体
-python code_agent\__main__.py --host localhost --port 10002
-
-# 启动RAG智能体
-python rag_agent\__main__.py --host localhost --port 10003
-
-# 启动检索智能体
+# 文件解析
+python file_parse_agent/__main__.py --host localhost --port 10001
+# 代码助手
+python code_agent/__main__.py --host localhost --port 10002
+# RAG
+python rag_agent/__main__.py --host localhost --port 10003
+# 搜索（需先启动数据库: docker-compose up -d）
 cd search_agent
-docker-compose up -d # 启动数据库
 python __main__.py --host localhost --port 10004
-
-# 启动研究智能体
-python research_agent\__main__.py --host localhost --port 10005
+# 研究助手
+python research_agent/__main__.py --host localhost --port 10005
 ```
-
-### 3. 启动客户端
-
+5. 启动客户端  
 ```bash
-# 进入客户端目录
+# Web 客户端 (Google ADK)
 cd a2a_client
-
-# 启动ADK Web客户端
 adk web --port 8030
 ```
+6. 访问  
+在浏览器打开 `http://localhost:8030`，或使用 `cli_client` 进行命令行交互。
 
-### 4. 访问界面
-打开浏览器访问：`http://localhost:8030`
-
-
-## 🧪 测试对话示例
-
-### 基础功能测试
-- 你这个多智能体系统有什么功能？
-
-### 任务测试
-- 帮我解析这个PDF文件:<文件路径>，告诉我Transformer的经典架构有多少个参数？                                    
-- 帮我生成懒线段树的模板代码，用python实现，直接返回给我代码
-- 我出现了发热、腹痛、头晕、气寒，可能是什么症状？
-- 查询一下小明的专业和学历
-- 帮我研究一下A2A与MCP协议的关系
-
-## 📁 项目结构
-
-```
-04_YiTianLearningCosmos_demo/
-├── a2a_client/              # 客户端应用程序
-│   └── client_host_agent/   # 客户端主机代理
-├── cli_client/              # 命令行客户端(用于测试单个远程A2A服务器)
-├── code_agent/              # 代码生成智能体
-├── rag_agent/            # RAG智能体
-├── file_parse_agent/        # 文件解析智能体
-├── search_agent/        # 搜索智能体
-├── research_agent/        # 研究智能体
-├── README.md               # 项目说明文档
-└── requirements.txt         # 依赖包列表
+### 运行入口（python -m）
+各智能体包均可用模块方式启动（适合 pipx/uv 安装后直接调用），路径解析由 `core/bootstrap.py` 自动完成，无需手动修改 `sys.path`：
+```bash
+python -m file_parse_agent --host localhost --port 10001
+python -m code_agent --host localhost --port 10002
+python -m rag_agent --host localhost --port 10003
+python -m search_agent --host localhost --port 10004
+python -m research_agent --host localhost --port 10005
 ```
 
-## 🤝 贡献指南
+## 配置说明（常用字段）
+- 配置由 `core/settings.py`（基于 pydantic-settings）统一管理，默认读取 `.env`。
+- `DASHSCOPE_API_KEY` / `DEEPSEEK_API_KEY`：大语言模型访问密钥。
+- `FILE_PARSE_AGENT_URL`、`CODE_AGENT_URL`、`RAG_AGENT_URL`、`SEARCH_AGENT_URL`、`RESEARCH_AGENT_URL`：各智能体服务地址。
+- `CLIENT_WEB_PORT`：Web 客户端端口。
+- `SEARCH_DB_*`：搜索智能体数据库连接配置。
+- 本地模型路径：`LLM_MODEL_PATH`、`EMBED_PATH`、`STORAGE_DIR`（以及 RAG 专用路径）用于离线/本地部署。
 
-欢迎提交Issue和Pull Request来改进项目！
+## A2A 通信监控
+- 入口：`core/observability.py` 提供 `setup_logging` / `get_logger` / `monitor` 统一接口。
+- 开启：设置 `ENABLE_A2A_MONITORING=true`，可选 `A2A_MONITOR_CONSOLE=true` 输出到终端。
+- 日志位置：`logs/a2a_communication/a2a_comm.log`（50MB 轮转，最多 10 份）。
+- 记录字段：方向、端点类型、时间戳、数据大小、上下文/任务/消息 ID、智能体名、元数据、流式分块索引、数据预览。
+- 安全红化：`core/security.py` 会自动对常见敏感键（token、api_key 等）做脱敏处理，日志中仅保留掩码。
+- 流式约定：`core/streaming.py` 定义 `stream_protocol=1.0`，统一端点类型字段（request/response/stream_chunk/error）。
+- 手动记录示例：
+```python
+from core.a2a_monitor import log_manual_communication
+log_manual_communication(
+    direction="client_to_server",
+    data={"demo": "payload"},
+    context_id="ctx-1",
+    task_id="task-1",
+    agent_name="demo_agent",
+)
+```
 
+## 目录结构
+```
+├─a2a_client/                 # 客户端及 Host Agent
+├─cli_client/                 # CLI 客户端
+├─code_agent/                 # 代码智能体
+├─file_parse_agent/           # 文档解析智能体
+├─rag_agent/                  # RAG 智能体
+├─search_agent/               # 通用检索智能体
+├─research_agent/             # 研究智能体
+├─core/                       # 公共模块：监控、装饰器、日志配置、异常
+├─assets/                     # 资源（图示等）
+├─requirements.txt
+├─pyproject.toml
+└─README.md
+```
 
-## 📄 许可证
+## 开发提示
+- 建议在虚拟环境内开发与运行。
+- 如需自定义扩展，参考 `core/a2a_monitor.py` 中的装饰器模式，保持 A2A 请求链路完整性。
+- 网络/LLM 调用可使用 `core.decorators.retry_on_network` 统一重试策略（基于 tenacity，默认指数退避）。
+- 目前未附带自动化测试用例，建议为新增能力补充 `pytest` 测试。
+- 类型提示：在 `core/types.py` 提供跨服务数据的 TypedDict/Protocol；提供 `mypy.ini`，可用 `mypy .` 做基础静态检查（缺失类型的三方库默认忽略）。
+- 依赖管理：推荐使用 `uv` / `pipx` 基于 `pyproject.toml` 安装，可按需选择 extras：`pip install .[core]`、`pip install .[server]`、`pip install .[client]`；生成锁文件可执行 `uv lock`。
+- 并发/资源：统一使用 `core.async_utils.create_http_client` 创建 httpx AsyncClient（默认关闭代理，带超时），避免在入口分散配置。
+- 安全/审计：默认日志已脱敏常见秘钥；如需接入鉴权，可在服务入口添加 Bearer/API Key 校验中间件（预留）。
+- 流式一致性：推荐事件端点类型遵循 `core/streaming.py` 的常量，日志自动带协议版本便于排查。
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
-
-## 🙏 致谢
-
-- [A2A协议](https://github.com/a2a-protocol) - 多智能体通信协议
-- [LlamaIndex](https://www.llamaindex.ai/) - 文档解析和RAG框架
-- [LangChain](https://github.com/langchain-ai/langchain) - 代码生成框架
-- [DashScope](https://dashscope.aliyun.com/) - 大语言模型服务
-
-<p align="center">Made with ❤️ for learning</p>
+## 许可证
+本项目使用 MIT License，详见 [LICENSE](LICENSE)。

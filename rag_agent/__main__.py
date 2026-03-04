@@ -2,6 +2,13 @@ import logging
 
 import click
 
+# 确保项目根路径在 sys.path
+import os, sys
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+import core.bootstrap  # 确保路径
 from a2a.server.apps import A2AStarletteApplication
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import InMemoryTaskStore
@@ -10,8 +17,8 @@ from a2a.types import (
     AgentCard,
     AgentSkill,
 )
-from agent_executor import DoctorRAGAgentExecutor
-from agent import DoctorRAGWorkflow
+from rag_agent.agent_executor import DoctorRAGAgentExecutor
+from rag_agent.agent import DoctorRAGWorkflow
 
 from dotenv import load_dotenv
 load_dotenv() # 加载环境变量

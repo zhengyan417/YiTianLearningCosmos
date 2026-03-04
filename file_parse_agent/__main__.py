@@ -10,8 +10,8 @@ from a2a.types import (
     AgentCard,
     AgentSkill,
 )
-from agent_executor import FileParseAgentExecutor
-from agent import ParseAndChat
+from file_parse_agent.agent_executor import FileParseAgentExecutor
+from file_parse_agent.agent import ParseAndChat
 
 from dotenv import load_dotenv
 load_dotenv() # 加载环境变量

@@ -1,4 +1,5 @@
 import logging
+import os
 
 from a2a.server.events import EventQueue
 from a2a.server.tasks import TaskUpdater
@@ -12,8 +13,13 @@ from a2a.types import (
     UnsupportedOperationError,
 )
 
-from agent import ResearchAgent
+from research_agent.agent import ResearchAgent
 from a2a.server.agent_execution import AgentExecutor, RequestContext
+
+# 导入 A2A 监控模块
+from core.a2a_monitor import monitor_agent_execution, get_monitor
+monitor_enabled = True
+monitor = get_monitor()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,6 +30,7 @@ class ResearchAgentExecutor(AgentExecutor):
     def __init__(self):
         self.agent = ResearchAgent()
 
+    @monitor_agent_execution
     async def execute(
         self, context: RequestContext, event_queue: EventQueue
     ) -> None:

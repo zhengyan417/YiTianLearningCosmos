@@ -22,34 +22,18 @@ from llama_index.core.workflow import (
 from llama_index.llms.dashscope import DashScope, DashScopeGenerationModels
 from pydantic import BaseModel, Field
 
-# 导入核心模块
-try:
-    # 尝试相对导入
-    from ..core import (
-        handle_exceptions,
-        retry_on_failure,
-        with_logging_context,
-        get_logger,
-        FileParsingError,
-        ModelCallError,
-        EnvironmentError,
-        InternalServerError
-    )
-except ImportError:
-    # 如果相对导入失败，使用绝对导入
-    import sys
-    import os
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from core import (
-        handle_exceptions,
-        retry_on_failure,
-        with_logging_context,
-        get_logger,
-        FileParsingError,
-        ModelCallError,
-        EnvironmentError,
-        InternalServerError
-    )
+# 导入核心模块（统一使用 core 包）
+import core.bootstrap  # noqa: F401  确保项目根在 sys.path
+from core import (
+    handle_exceptions,
+    retry_on_failure,
+    with_logging_context,
+    get_logger,
+    FileParsingError,
+    ModelCallError,
+    EnvironmentError,
+    InternalServerError,
+)
 
 
 # 打印事件

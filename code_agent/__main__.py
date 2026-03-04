@@ -1,6 +1,8 @@
 import click
 import uvicorn
 
+import core.bootstrap  # 统一项目根路径注入
+
 from a2a.server.apps import A2AStarletteApplication
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import (
@@ -13,8 +15,8 @@ from a2a.types import (
 )
 from dotenv import load_dotenv
 
-from agent import CodeAgent
-from agent_executor import CodeAgentExecutor
+from code_agent.agent import CodeAgent
+from code_agent.agent_executor import CodeAgentExecutor
 
 load_dotenv()
 

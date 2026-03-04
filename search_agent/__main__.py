@@ -14,8 +14,8 @@ from a2a.types import (
 from dotenv import load_dotenv
 load_dotenv()
 
-from agent import SearchAgent
-from agent_executor import SearchAgentExecutor
+from search_agent.agent import SearchAgent
+from search_agent.agent_executor import SearchAgentExecutor
 
 
 @click.command() # 创建命令行接口

@@ -12,8 +12,10 @@ from a2a.types import (
     UnsupportedOperationError,
 )
 
-from agent import CodeAgent
+from code_agent.agent import CodeAgent
 from a2a.server.agent_execution import AgentExecutor, RequestContext
+
+from core.a2a_monitor import monitor_agent_execution
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,6 +26,7 @@ class CodeAgentExecutor(AgentExecutor):
     def __init__(self):
         self.agent = CodeAgent(use_minimind=False)
 
+    @monitor_agent_execution
     async def execute(
         self, context: RequestContext, event_queue: EventQueue
     ) -> None:

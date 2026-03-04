@@ -3,10 +3,21 @@ import base64
 import json
 import os
 import sys
+from pathlib import Path
 from typing import Optional
 import uuid
 
 import httpx
+
+# 防御性注入项目根
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT_UP = PROJECT_ROOT.parent
+for candidate in (PROJECT_ROOT, PROJECT_ROOT_UP):
+    c = str(candidate)
+    if c not in sys.path:
+        sys.path.insert(0, c)
+
+import core.bootstrap  # 确保项目根路径在 sys.path
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
@@ -80,6 +91,9 @@ class HostAgent:
     ):
         async with asyncio.TaskGroup() as task_group:
             for address in remote_agent_addresses:
+                # 跳过空地址，避免无效请求
+                if not address:
+                    continue
                 task_group.create_task(self.retrieve_card(address))
         # The task groups run in the background and complete.
         # Once completed the self.agents string is set and the remote
@@ -87,9 +101,14 @@ class HostAgent:
 
     # 获取agent card
     async def retrieve_card(self, address: str):
-        card_resolver = A2ACardResolver(self.httpx_client, address)
-        card = await card_resolver.get_agent_card()
-        self.register_agent_card(card)
+        try:
+            card_resolver = A2ACardResolver(self.httpx_client, address)
+            card = await card_resolver.get_agent_card()
+            self.register_agent_card(card)
+        except Exception as e:
+            # 记录错误但不让异常中断 TaskGroup，其它可用智能体仍可注册
+            print(f"[HostAgent] 获取 Agent Card 失败: {address} -> {e}")
+            return
 
     # 注册agent card
     def register_agent_card(self, card: AgentCard):

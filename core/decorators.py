@@ -5,9 +5,19 @@
 
 import functools
 import traceback
-from typing import Callable, Any, TypeVar, cast
+from typing import Callable, Any, TypeVar, cast, Iterable
 import asyncio
 import inspect
+import logging
+
+try:
+    import httpx
+except Exception:  # httpx 可选
+    httpx = None
+try:
+    from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+except Exception:
+    retry = None  # 若未安装，可用 requirements 安装 tenacity
 
 from .exceptions import (
     BaseAppException, 
@@ -26,6 +36,7 @@ from .logging_config import get_logger, log_exception
 F = TypeVar('F', bound=Callable[..., Any])
 
 logger = get_logger(__name__)
+retry_logger = logging.getLogger("retry")
 
 
 def handle_exceptions(
@@ -212,7 +223,54 @@ def retry_on_failure(
                 raise last_exception
             
             return cast(F, sync_wrapper)
-    
+
+    return cast(F, decorator)
+def retry_on_network(
+    attempts: int = 3,
+    base_delay: float = 0.5,
+    exceptions: Iterable[type[BaseException]] | None = None,
+):
+    """
+    针对网络/LLM调用的重试装饰器，使用 tenacity（若已安装）。
+    若未安装 tenacity，将直接调用原函数（日志提示）。
+    """
+    retry_exc = tuple(exceptions) if exceptions else (
+        TimeoutError,
+        ConnectionError,
+        asyncio.TimeoutError,
+    ) + ((httpx.TimeoutException, httpx.ConnectError) if httpx else ())
+
+    def decorator(func: F) -> F:
+        if retry is None:
+            retry_logger.warning("tenacity 未安装，retry_on_network 不生效")
+            return func
+
+        if asyncio.iscoroutinefunction(func):
+            @retry(
+                reraise=True,
+                stop=stop_after_attempt(attempts),
+                wait=wait_exponential(multiplier=base_delay, min=base_delay, max=base_delay * 8),
+                retry=retry_if_exception_type(retry_exc),
+            )
+            @functools.wraps(func)
+            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+                return await func(*args, **kwargs)
+
+            return cast(F, async_wrapper)
+        else:
+            @retry(
+                reraise=True,
+                stop=stop_after_attempt(attempts),
+                wait=wait_exponential(multiplier=base_delay, min=base_delay, max=base_delay * 8),
+                retry=retry_if_exception_type(retry_exc),
+            )
+            @functools.wraps(func)
+            def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+                return func(*args, **kwargs)
+
+            return cast(F, sync_wrapper)
+
+    return decorator
     return decorator
 
 

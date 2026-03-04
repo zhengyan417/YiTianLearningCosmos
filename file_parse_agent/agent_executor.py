@@ -17,13 +17,15 @@ from a2a.types import (
 )
 from a2a.utils import are_modalities_compatible, new_agent_text_message
 from a2a.utils.errors import ServerError
-from agent import (
+from file_parse_agent.agent import (
     ChatResponseEvent,
     InputEvent,
     LogEvent,
     ParseAndChat,
 )
 from llama_index.core.workflow import Context
+
+from core.a2a_monitor import monitor_agent_execution
 
 logger = logging.getLogger(__name__) # 获取日志记录器
 
@@ -47,6 +49,7 @@ class FileParseAgentExecutor(AgentExecutor):
         self.ctx_states: Dict[str, Dict[str, Any]] = {} # 存储会话状态
 
     # 执行方法
+    @monitor_agent_execution
     async def execute(
         self,
         context: RequestContext,

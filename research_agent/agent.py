@@ -8,12 +8,12 @@ from langchain_deepseek import ChatDeepSeek
 from deepagents.backends import FilesystemBackend # 文件后端
 # from langchain_daytona import DaytonaSandbox
 
-from research_agent_utils.prompts import (
+from research_agent.research_agent_utils.prompts import (
     RESEARCHER_INSTRUCTIONS,
     RESEARCH_WORKFLOW_INSTRUCTIONS,
     SUBAGENT_DELEGATION_INSTRUCTIONS,
 )
-from research_agent_utils.tools import tavily_search, think_tool
+from research_agent.research_agent_utils.tools import tavily_search, think_tool
 
 # 加载环境变量
 import dotenv

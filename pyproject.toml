@@ -35,4 +35,25 @@ dependencies = [
     "timestamp>=0.0.1",
     "torch>=2.9.1",
     "uvicorn>=0.38.0",
+    "tenacity>=8.2.3",
+    "pydantic-settings>=2.1.0",
 ]
+
+[project.optional-dependencies]
+core = [
+    "pydantic-settings>=2.1.0",
+    "tenacity>=8.2.3",
+]
+server = [
+    "a2a-sdk[http-server]>=0.3.10",
+    "uvicorn>=0.38.0",
+    "psycopg2>=2.9.11",
+]
+client = [
+    "asyncclick>=8.3.0.7",
+    "google-adk>=1.17.0",
+]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]

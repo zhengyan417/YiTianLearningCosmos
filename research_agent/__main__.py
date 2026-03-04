@@ -14,8 +14,10 @@ from a2a.types import (
 from dotenv import load_dotenv
 load_dotenv()
 
-from agent import ResearchAgent
-from agent_executor import ResearchAgentExecutor
+import core.bootstrap  # 统一项目根路径注入
+
+from research_agent.agent import ResearchAgent
+from research_agent.agent_executor import ResearchAgentExecutor
 
 
 @click.command() # 创建命令行接口

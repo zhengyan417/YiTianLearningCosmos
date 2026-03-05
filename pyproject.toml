@@ -39,6 +39,20 @@ dependencies = [
     "pydantic-settings>=2.1.0",
 ]
 
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+src = ["."]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]  # 行长由格式化器统一处理
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
 [project.optional-dependencies]
 core = [
     "pydantic-settings>=2.1.0",

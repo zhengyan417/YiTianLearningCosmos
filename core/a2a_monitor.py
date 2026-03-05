@@ -15,6 +15,8 @@ from typing import Any, Dict, Optional, Callable
 from functools import wraps
 import asyncio
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
 from core.security import redact_any
 from core.streaming import (
     STREAM_PROTOCOL_VERSION,
@@ -68,7 +70,7 @@ class A2AMonitorLogger:
     
     def __init__(
         self,
-        log_dir: str = "logs/a2a_communication",
+        log_dir: Optional[str] = None,
         log_filename: str = "a2a_comm.log",
         max_bytes: int = 50 * 1024 * 1024,  # 50MB
         backup_count: int = 10,
@@ -84,7 +86,11 @@ class A2AMonitorLogger:
             backup_count: 保留的备份文件数量
             log_level: 日志级别
         """
-        self.log_dir = Path(log_dir)
+        # 默认使用项目根下的 logs/a2a_communication，避免因 cwd 变化写入子目录
+        if log_dir is None:
+            self.log_dir = PROJECT_ROOT / "logs" / "a2a_communication"
+        else:
+            self.log_dir = Path(log_dir)
         self.log_dir.mkdir(parents=True, exist_ok=True)
         
         self.log_file = self.log_dir / log_filename

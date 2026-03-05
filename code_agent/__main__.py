@@ -1,6 +1,16 @@
 import click
 import uvicorn
 
+import os, sys
+from pathlib import Path
+# 防御性注入项目根，避免从子目录运行找不到 core
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT_UP = PROJECT_ROOT.parent
+for candidate in (PROJECT_ROOT, PROJECT_ROOT_UP):
+    c = str(candidate)
+    if c not in sys.path:
+        sys.path.insert(0, c)
+
 import core.bootstrap  # 统一项目根路径注入
 
 from a2a.server.apps import A2AStarletteApplication

@@ -92,7 +92,7 @@ python -m research_agent --host localhost --port 10005
 ## A2A 通信监控
 - 入口：`core/observability.py` 提供 `setup_logging` / `get_logger` / `monitor` 统一接口。
 - 开启：设置 `ENABLE_A2A_MONITORING=true`，可选 `A2A_MONITOR_CONSOLE=true` 输出到终端。
-- 日志位置：`logs/a2a_communication/a2a_comm.log`（50MB 轮转，最多 10 份）。
+- 日志位置：项目根目录下 `logs/a2a_communication/a2a_comm.log`（50MB 轮转，最多 10 份），不受运行时 cwd 影响。
 - 记录字段：方向、端点类型、时间戳、数据大小、上下文/任务/消息 ID、智能体名、元数据、流式分块索引、数据预览。
 - 安全红化：`core/security.py` 会自动对常见敏感键（token、api_key 等）做脱敏处理，日志中仅保留掩码。
 - 流式约定：`core/streaming.py` 定义 `stream_protocol=1.0`，统一端点类型字段（request/response/stream_chunk/error）。
@@ -134,6 +134,7 @@ log_manual_communication(
 - 并发/资源：统一使用 `core.async_utils.create_http_client` 创建 httpx AsyncClient（默认关闭代理，带超时），避免在入口分散配置。
 - 安全/审计：默认日志已脱敏常见秘钥；如需接入鉴权，可在服务入口添加 Bearer/API Key 校验中间件（预留）。
 - 流式一致性：推荐事件端点类型遵循 `core/streaming.py` 的常量，日志自动带协议版本便于排查。
+- 质量门禁：已提供 `.github/workflows/ci.yml`（ruff/mypy/pytest）和 `.pre-commit-config.yaml`；本地可运行 `ruff check .`、`mypy .`、`pytest -q`。
 
 ## 许可证
 本项目使用 MIT License，详见 [LICENSE](LICENSE)。

@@ -51,6 +51,7 @@
 - 新增 `core/security.py` 自动红化敏感字段；`core/streaming.py` 统一流式端点类型与协议版本
 - 新增 `examples/minimal_cli_call.sh` 最小运行示例；新增通用 `Dockerfile`（默认启动 code_agent，支持变量切换）
 
+
 ### 修改
 - 客户端 Host Agent 及远程连接模块改用统一的路径初始化，降低重复 sys.path 设置
 - `code_agent/__main__.py`、`research_agent/__main__.py` 改为依赖 bootstrap，去除局部 sys.path 注入
@@ -61,3 +62,12 @@
 
 ### 修复
 - 解决在不同工作目录或代理环境下可能出现的 `ModuleNotFoundError: core` 导入问题
+
+## [0.3.1] - 2026-03-05
+### 修改
+- A2A 监控日志目录改为固定项目根下 `logs/a2a_communication`，避免 cwd 变化导致日志散落
+- `create_http_client` 默认提供 httpx 连接池 `Limits`，避免缺省为 None 触发异常
+- `client_host_agent` 防御性路径注入，提升 ADK 下加载 `core` 的稳定性
+- `code_agent`、`research_agent`、`rag_agent` 等入口继续改为包内绝对导入，兼容多工作目录运行
+- 新增 CI/质量门禁：`.github/workflows/ci.yml`（ruff/mypy/pytest）、`.pre-commit-config.yaml`，并在 `pyproject.toml` 写入 ruff 配置
+

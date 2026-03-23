@@ -108,6 +108,46 @@ log_manual_communication(
 )
 ```
 
+## 测试与验证
+- 单元测试：`tests/test_settings.py`、`tests/test_retry_decorator.py`、`tests/test_monitor_logging.py`。
+- Host 链路 E2E：`tests/e2e_host_chains.py`（可自动拉起服务并验证跨 Agent 调用链路）。
+- 全流程脚本：`tests/full_project_a2a_test.py`（自动发现虚拟环境、启动 5 个服务端、执行 CLI 多轮对话、执行 Host 链路测试、执行 pytest，并输出汇总日志）。
+
+### 本地执行（推荐顺序）
+```bash
+# 1) 激活虚拟环境
+.venv\Scripts\activate
+
+# 2) 基础测试
+pytest -q
+
+# 3) Host 链路联调
+python tests/e2e_host_chains.py
+
+# 4) 完整端到端（含日志归档）
+python tests/full_project_a2a_test.py
+```
+
+### 全流程测试产物
+- 输出目录：`logs/full_project_test/<timestamp>/`
+- 关键文件：
+  - `summary.json`：本轮总览（服务状态、CLI 多轮结果、Host 链路结果、pytest 结果）
+  - `runner.log`：脚本运行时间线
+  - `servers/*.out.log|*.err.log`：5 个服务端日志
+  - `clients/*.cli.out.log|*.cli.err.log`：CLI 多轮会话日志
+  - `clients/host_chain.out.log|host_chain.err.log`：Host 链路日志
+  - `artifacts/pytest.out.log|pytest.err.log`：pytest 输出
+  - `artifacts/a2a_communication_snapshot/a2a_comm.log`：通信日志快照
+
+## 日志治理与清理
+- 建议长期保留：
+  - 最新一次成功的 `logs/full_project_test/<timestamp>/summary.json`
+  - `logs/a2a_communication/a2a_comm.log`（如需追溯线上问题）
+- 可按需清理：
+  - 历史 `logs/full_project_test/<old_timestamp>/` 目录
+  - `logs/e2e_chain_run/`、`logs/e2e_startup/`（临时联调日志）
+  - 测试缓存目录（如 `tests/__pycache__/`）
+
 ## 目录结构
 ```
 ├─a2a_client/                 # 客户端及 Host Agent
@@ -118,6 +158,8 @@ log_manual_communication(
 ├─search_agent/               # 通用检索智能体
 ├─research_agent/             # 研究智能体
 ├─core/                       # 公共模块：监控、装饰器、日志配置、异常
+├─tests/                      # 单元测试与联调脚本（含 full_project_a2a_test.py）
+├─logs/                       # 运行日志、通信审计、自动化测试产物
 ├─assets/                     # 资源（图示等）
 ├─requirements.txt
 ├─pyproject.toml
@@ -128,7 +170,7 @@ log_manual_communication(
 - 建议在虚拟环境内开发与运行。
 - 如需自定义扩展，参考 `core/a2a_monitor.py` 中的装饰器模式，保持 A2A 请求链路完整性。
 - 网络/LLM 调用可使用 `core.decorators.retry_on_network` 统一重试策略（基于 tenacity，默认指数退避）。
-- 目前未附带自动化测试用例，建议为新增能力补充 `pytest` 测试。
+- 已提供单元测试 + Host 链路测试 + 全流程自动化脚本；建议新增能力时同步补充 `pytest` 用例并更新 `full_project_a2a_test.py` 的验证场景。
 - 类型提示：在 `core/types.py` 提供跨服务数据的 TypedDict/Protocol；提供 `mypy.ini`，可用 `mypy .` 做基础静态检查（缺失类型的三方库默认忽略）。
 - 依赖管理：推荐使用 `uv` / `pipx` 基于 `pyproject.toml` 安装，可按需选择 extras：`pip install .[core]`、`pip install .[server]`、`pip install .[client]`；生成锁文件可执行 `uv lock`。
 - 并发/资源：统一使用 `core.async_utils.create_http_client` 创建 httpx AsyncClient（默认关闭代理，带超时），避免在入口分散配置。

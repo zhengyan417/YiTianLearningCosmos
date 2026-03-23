@@ -1,5 +1,8 @@
 import click
 import uvicorn
+import os
+import threading
+import logging
 
 from a2a.server.apps import A2AStarletteApplication
 from a2a.server.request_handlers import DefaultRequestHandler
@@ -17,11 +20,33 @@ load_dotenv()
 from search_agent.agent import SearchAgent
 from search_agent.agent_executor import SearchAgentExecutor
 
+logger = logging.getLogger(__name__)
+
+
+def _start_mcp_server_in_background():
+    """按需后台启动 MCP 服务器，避免单独手动起进程。"""
+    enabled = os.getenv("AUTO_START_SEARCH_MCP", "false").lower() == "true"
+    if not enabled:
+        return
+
+    try:
+        # 仅在当前进程内作为后台线程运行，不阻塞 A2A 服务。
+        from search_agent.mcp_server import mcp
+
+        thread = threading.Thread(target=mcp.run, daemon=True)
+        thread.start()
+        logger.info("搜索 MCP 服务器已在后台启动。")
+    except Exception as e:
+        # MCP 启动失败不影响主服务；SearchAgent 自身有本地兜底工具。
+        logger.warning(f"后台启动搜索 MCP 服务器失败: {e}")
+
 
 @click.command() # 创建命令行接口
 @click.option('--host', 'host', default='localhost') # 主机
 @click.option('--port', 'port', default=10004) # 端口
 def main(host, port):
+    _start_mcp_server_in_background()
+
     # 1. 定义AgentSkill
     serach_skill = AgentSkill(
         id='search_information',

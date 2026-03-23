@@ -1,0 +1,142 @@
+{
+  "run_timestamp": "20260323_095919",
+  "run_dir": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919",
+  "python": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\.venv\\Scripts\\python.exe",
+  "venv_pythons": [
+    "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\.venv\\Scripts\\python.exe"
+  ],
+  "servers": [
+    {
+      "name": "file_parse",
+      "module": "file_parse_agent",
+      "port": 10001,
+      "pid": 37732,
+      "log_file": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\servers\\file_parse.out.log",
+      "err_file": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\servers\\file_parse.err.log",
+      "started": true,
+      "healthy": true,
+      "health_status": "HTTP 405"
+    },
+    {
+      "name": "code",
+      "module": "code_agent",
+      "port": 10002,
+      "pid": 33340,
+      "log_file": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\servers\\code.out.log",
+      "err_file": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\servers\\code.err.log",
+      "started": true,
+      "healthy": true,
+      "health_status": "HTTP 405"
+    },
+    {
+      "name": "rag",
+      "module": "rag_agent",
+      "port": 10003,
+      "pid": 20036,
+      "log_file": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\servers\\rag.out.log",
+      "err_file": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\servers\\rag.err.log",
+      "started": true,
+      "healthy": true,
+      "health_status": "HTTP 405"
+    },
+    {
+      "name": "search",
+      "module": "search_agent",
+      "port": 10004,
+      "pid": 17800,
+      "log_file": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\servers\\search.out.log",
+      "err_file": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\servers\\search.err.log",
+      "started": true,
+      "healthy": true,
+      "health_status": "HTTP 405"
+    },
+    {
+      "name": "research",
+      "module": "research_agent",
+      "port": 10005,
+      "pid": 43660,
+      "log_file": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\servers\\research.out.log",
+      "err_file": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\servers\\research.err.log",
+      "started": true,
+      "healthy": true,
+      "health_status": "HTTP 405"
+    }
+  ],
+  "cli_multi_round": [
+    {
+      "agent": "file_parse",
+      "url": "http://127.0.0.1:10001",
+      "returncode": 0,
+      "elapsed_sec": 72.63,
+      "ok": true,
+      "stdout_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\clients\\file_parse.cli.out.log",
+      "stderr_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\clients\\file_parse.cli.err.log",
+      "stdout_preview": "Will use headers: {}\n======= Agent Card ========\n{\"capabilities\":{\"pushNotifications\":true,\"streaming\":true},\"defaultInputModes\":[\"text/plain\",\"application/pdf\",\"application/msword\",\"image/png\",\"image/jpeg\"],\"defaultOutputModes\":[\"text\",\"text/plain\"],\"description\":\"解析文件并且使用解析后的内容进行聊天\",\"name\":\"文档解析智能体\",\"preferredTransport\":\"JSONRPC\",\"protocolVersion\":\"0.3.0\",\"skills\":[{\"description\":\"解析文件并且使用解析后的内容进行聊天\",\"examples\":[\"这个文件讲了什么?\"],\"id\":\"parse_and_chat\",\"name\":\"文件解析和聊天\",\"tags\":[\"parse\",\"chat\",\"file\",\"llama_parse\"]}],\"url\":\"http://127.0.0.1:10001/\",\"version\":\"1.0.0\"}\n=========  starting a new task ======== \n\nWhat do you want to send to the agent? (:q or quit to exit): Select a file path to attach? (press enter to skip): stream event => {\"contextId\":\"20260321\",\"final\":false,\"kind\":\"status-update\"",
+      "stderr_preview": ""
+    },
+    {
+      "agent": "code",
+      "url": "http://127.0.0.1:10002",
+      "returncode": 0,
+      "elapsed_sec": 13.89,
+      "ok": true,
+      "stdout_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\clients\\code.cli.out.log",
+      "stderr_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\clients\\code.cli.err.log",
+      "stdout_preview": "Will use headers: {}\n======= Agent Card ========\n{\"capabilities\":{\"pushNotifications\":true,\"streaming\":true},\"defaultInputModes\":[\"text\",\"text/plain\"],\"defaultOutputModes\":[\"text\",\"text/plain\"],\"description\":\"根据需求生成特定的python代码\",\"name\":\"代码智能体\",\"preferredTransport\":\"JSONRPC\",\"protocolVersion\":\"0.3.0\",\"skills\":[{\"description\":\"根据需求生成特定的python代码\",\"examples\":[\"帮我生成一段快速排序的代码\"],\"id\":\"create_code\",\"name\":\"代码生成工具\",\"tags\":[\"code\"]}],\"url\":\"http://127.0.0.1:10002/\",\"version\":\"1.0.0\"}\n=========  starting a new task ======== \n\nWhat do you want to send to the agent? (:q or quit to exit): Select a file path to attach? (press enter to skip): stream event => {\"contextId\":\"20260321\",\"history\":[{\"contextId\":\"20260321\",\"kind\":\"message\",\"messageId\":\"11aa787f-bd79-48b5-af60-ff28f87d7a6a\",\"parts\":[{\"kind\":\"text\"",
+      "stderr_preview": ""
+    },
+    {
+      "agent": "rag",
+      "url": "http://127.0.0.1:10003",
+      "returncode": 0,
+      "elapsed_sec": 490.92,
+      "ok": true,
+      "stdout_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\clients\\rag.cli.out.log",
+      "stderr_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\clients\\rag.cli.err.log",
+      "stdout_preview": "Will use headers: {}\n======= Agent Card ========\n{\"capabilities\":{\"pushNotifications\":true,\"streaming\":true},\"defaultInputModes\":[\"text/plain\"],\"defaultOutputModes\":[\"text\",\"text/plain\"],\"description\":\"基于医学知识库的专业医生助手，可以回答健康和医疗相关问题\",\"name\":\"RAG智能体\",\"preferredTransport\":\"JSONRPC\",\"protocolVersion\":\"0.3.0\",\"skills\":[{\"description\":\"基于医学知识库进行查询并回答健康问题\",\"examples\":[\"我最近经常头痛怎么办？\",\"高血压有哪些症状？\"],\"id\":\"doctor_rag_query\",\"name\":\"RAG查询\",\"tags\":[\"medical\",\"health\",\"rag\",\"doctor\"]}],\"url\":\"http://127.0.0.1:10003/\",\"version\":\"1.0.0\"}\n=========  starting a new task ======== \n\nWhat do you want to send to the agent? (:q or quit to exit): Select a file path to attach? (press enter to skip): stream event => {\"contextId\":\"20260321\",\"final\":false,\"kind\":\"status-update\",\"status\":{\"state\":\"submitted\",\"timestamp\":",
+      "stderr_preview": ""
+    },
+    {
+      "agent": "search",
+      "url": "http://127.0.0.1:10004",
+      "returncode": 0,
+      "elapsed_sec": 4.19,
+      "ok": true,
+      "stdout_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\clients\\search.cli.out.log",
+      "stderr_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\clients\\search.cli.err.log",
+      "stdout_preview": "Will use headers: {}\n======= Agent Card ========\n{\"capabilities\":{\"pushNotifications\":true,\"streaming\":true},\"defaultInputModes\":[\"text\",\"text/plain\"],\"defaultOutputModes\":[\"text\",\"text/plain\"],\"description\":\"根据需求查询用户的个人信息或者进行网络搜索\",\"name\":\"搜索智能体\",\"preferredTransport\":\"JSONRPC\",\"protocolVersion\":\"0.3.0\",\"skills\":[{\"description\":\"根据需求查询用户的个人信息或者进行网络搜索\",\"examples\":[\"帮我查询一下北京的天气\",\"查询一下用户的个人信息\"],\"id\":\"search_information\",\"name\":\"查询工具\",\"tags\":[\"search\"]}],\"url\":\"http://127.0.0.1:10004/\",\"version\":\"1.0.0\"}\n=========  starting a new task ======== \n\nWhat do you want to send to the agent? (:q or quit to exit): Select a file path to attach? (press enter to skip): stream event => {\"contextId\":\"20260321\",\"history\":[{\"contextId\":\"20260321\",\"kind\":\"message\",\"messageId\":\"010a78fc-029b-469e-9af9-c7b16bb4a8",
+      "stderr_preview": ""
+    },
+    {
+      "agent": "research",
+      "url": "http://127.0.0.1:10005",
+      "returncode": 0,
+      "elapsed_sec": 132.09,
+      "ok": true,
+      "stdout_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\clients\\research.cli.out.log",
+      "stderr_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\clients\\research.cli.err.log",
+      "stdout_preview": "Will use headers: {}\n======= Agent Card ========\n{\"capabilities\":{\"pushNotifications\":true,\"streaming\":true},\"defaultInputModes\":[\"text\",\"text/plain\"],\"defaultOutputModes\":[\"text\",\"text/plain\"],\"description\":\"根据用户要求进行研究(包含网络搜索功能)\",\"name\":\"研究智能体\",\"preferredTransport\":\"JSONRPC\",\"protocolVersion\":\"0.3.0\",\"skills\":[{\"description\":\"根据用户要求进行研究\",\"examples\":[\"帮我研究一下A2A与MCP的关系\",\"研究一下量子计算\"],\"id\":\"research_tool\",\"name\":\"研究工具\",\"tags\":[\"search\"]}],\"url\":\"http://127.0.0.1:10005/\",\"version\":\"1.0.0\"}\n=========  starting a new task ======== \n\nWhat do you want to send to the agent? (:q or quit to exit): Select a file path to attach? (press enter to skip): stream event => {\"contextId\":\"20260321\",\"history\":[{\"contextId\":\"20260321\",\"kind\":\"message\",\"messageId\":\"b059265b-0d64-4bf7-ae46-83f985911a92\",\"parts\":[{\"",
+      "stderr_preview": ""
+    }
+  ],
+  "host_chain": {
+    "returncode": 0,
+    "elapsed_sec": 130.76,
+    "ok": true,
+    "stdout_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\clients\\host_chain.out.log",
+    "stderr_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\clients\\host_chain.err.log",
+    "stdout_preview": "2026-03-23 10:13:01,185 - a2a.client.card_resolver - INFO - Successfully fetched agent card data from http://127.0.0.1:10001/.well-known/agent-card.json: {'capabilities': {'pushNotifications': True, 'streaming': True}, 'defaultInputModes': ['text/plain', 'application/pdf', 'application/msword', 'image/png', 'image/jpeg'], 'defaultOutputModes': ['text', 'text/plain'], 'description': '解析文件并且使用解析后的内容进行聊天', 'name': '文档解析智能体', 'preferredTransport': 'JSONRPC', 'protocolVersion': '0.3.0', 'skills': [{'description': '解析文件并且使用解析后的内容进行聊天', 'examples': ['这个文件讲了什么?'], 'id': 'parse_and_chat', 'name': '文件解析和聊天', 'tags': ['parse', 'chat', 'file', 'llama_parse']}], 'url': 'http://127.0.0.1:10001/', 'version': '1.0.0'}\n2026-03-23 10:13:01,186 - a2a.client.card_resolver - INFO - Successfully fetched agent card data from http://127.0.0.1:10002/.well-known/agent-card.json: {'capabilities': {'pushNotifications': True, 'streaming': True}, 'defaultInputModes': ['text', 'text/plain'], 'defaultOutputModes': ['",
+    "stderr_preview": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\.venv\\Lib\\site-packages\\google\\cloud\\aiplatform\\models.py:52: FutureWarning: Support for google-cloud-storage < 3.0.0 will be removed in a future version of google-cloud-aiplatform. Please upgrade to google-cloud-storage >= 3.0.0.\n  from google.cloud.aiplatform.utils import gcs_utils\n"
+  },
+  "pytest": {
+    "returncode": 0,
+    "ok": true,
+    "stdout_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\artifacts\\pytest.out.log",
+    "stderr_log": "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\artifacts\\pytest.err.log",
+    "stdout_preview": "....                                                                     [100%]\n",
+    "stderr_preview": ""
+  },
+  "copied_a2a_monitor_logs": [
+    "C:\\study\\agent_communication\\Projects\\YiTianLearningCosmos\\logs\\full_project_test\\20260323_095919\\artifacts\\a2a_communication_snapshot\\a2a_comm.log"
+  ]
+}

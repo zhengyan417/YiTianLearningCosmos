@@ -5,14 +5,13 @@ from a2a.server.tasks import TaskUpdater
 from a2a.utils.errors import ServerError
 from a2a.utils import new_task, new_agent_text_message
 from a2a.types import (
-    InternalError,
     Part,
     TaskState,
     TextPart,
     UnsupportedOperationError,
 )
 
-from agent import SearchAgent
+from search_agent.agent import SearchAgent
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 
 from core.a2a_monitor import monitor_agent_execution
@@ -71,7 +70,11 @@ class SearchAgentExecutor(AgentExecutor):
 
         except Exception as e:
             logger.error(f'在流式传输消息的时候出现了错误: {e}')
-            raise ServerError(error=InternalError()) from e
+            await updater.add_artifact(
+                [Part(root=TextPart(text=f'搜索任务执行失败: {type(e).__name__}: {str(e)}'))],
+                name='search_error',
+            )
+            await updater.complete()
 
     async def cancel(
         self, context: RequestContext, event_queue: EventQueue

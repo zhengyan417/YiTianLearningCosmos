@@ -11,6 +11,11 @@ async def flaky(counter: list[int]):
     return "ok"
 
 
+async def always_fail(counter: list[int]):
+    counter[0] += 1
+    raise ConnectionError("boom")
+
+
 @pytest.mark.asyncio
 async def test_retry_on_network_succeeds():
     counter = [0]
@@ -30,7 +35,8 @@ async def test_retry_on_network_exceeds():
 
     @retry_on_network(attempts=2, base_delay=0.01)
     async def wrapped():
-        return await flaky(counter)
+        return await always_fail(counter)
 
     with pytest.raises(ConnectionError):
         await wrapped()
+    assert counter[0] == 2

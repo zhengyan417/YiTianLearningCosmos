@@ -129,6 +129,50 @@ class A2AMonitorLogger:
         self.logger.info("=" * 80)
         self.logger.info("A2A 通信监控模块已启动")
         self.logger.info("=" * 80)
+
+    def _ensure_file_handler(self) -> None:
+        """Ensure file handler points to current ``self.log_file``."""
+        try:
+            self.log_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
+
+        target_file = str(self.log_file.resolve())
+        current_file = None
+        for handler in self.logger.handlers:
+            if isinstance(handler, logging.handlers.RotatingFileHandler):
+                current_file = str(Path(handler.baseFilename).resolve())
+                break
+
+        if current_file == target_file:
+            return
+
+        formatter = logging.Formatter(
+            '%(asctime)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        new_handler = logging.handlers.RotatingFileHandler(
+            self.log_file,
+            maxBytes=50 * 1024 * 1024,
+            backupCount=10,
+            encoding='utf-8'
+        )
+        new_handler.setLevel(logging.INFO)
+        new_handler.setFormatter(formatter)
+
+        kept_handlers = []
+        for handler in self.logger.handlers:
+            if isinstance(handler, logging.handlers.RotatingFileHandler):
+                try:
+                    handler.flush()
+                    handler.close()
+                except Exception:
+                    pass
+                continue
+            kept_handlers.append(handler)
+
+        self.logger.handlers = kept_handlers
+        self.logger.addHandler(new_handler)
     
     def log_communication(
         self,
@@ -158,6 +202,8 @@ class A2AMonitorLogger:
             streaming: 是否是流式传输
             chunk_index: 流式分块索引（如果是流式传输）
         """
+        self._ensure_file_handler()
+
         # 先将对象转换为可序列化格式，避免在日志中丢失关键信息
         payload = _extract_payload(data)
 

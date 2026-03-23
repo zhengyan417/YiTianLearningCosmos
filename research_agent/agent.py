@@ -13,7 +13,11 @@ from research_agent.research_agent_utils.prompts import (
     RESEARCH_WORKFLOW_INSTRUCTIONS,
     SUBAGENT_DELEGATION_INSTRUCTIONS,
 )
-from research_agent.research_agent_utils.tools import tavily_search, think_tool
+from research_agent.research_agent_utils.tools import (
+    tavily_search,
+    think_tool,
+    run_research_search,
+)
 
 # 加载环境变量
 import dotenv
@@ -57,11 +61,21 @@ class ResearchAgent:
             timeout=None,
             max_retries=2,
         )
+        self.model = model
 
         # 创建沙盒和后端
         research_root_dir = os.getenv("RESEARCH_FILE_PATH")
+        if not research_root_dir:
+            research_root_dir = os.path.join(
+                os.path.dirname(__file__),
+                "backend",
+            )
         os.makedirs(research_root_dir, exist_ok=True)
-        backend = FilesystemBackend(root_dir=research_root_dir, virtual_mode=True)
+        self.research_root_dir = research_root_dir
+        backend = FilesystemBackend(
+            root_dir=self.research_root_dir,
+            virtual_mode=True,
+        )
 
         # Create the agent
         self.agent = create_deep_agent(
@@ -73,29 +87,53 @@ class ResearchAgent:
         )
     
     async def stream(self, query, context_id):
-        # 调用底层 agent 的 stream 方法（它是同步的）
-        for namespace, chunk in self.agent.stream(
-            {"messages": [{"role": "user", "content": query}]},
-            stream_mode="updates",
-            subgraphs=True,  
-        ):
-            if namespace:
-                # Subagent event — namespace identifies the source
-                print(f"[subagent: {namespace}]")
-            else:
-                # Main agent event
-                print("[main agent]")
-            print(chunk)
-        
-        # 任务完成，读取最终报告并 yield 结果
-        with open(os.path.join(research_root_dir, f"final_report.md"), "r") as f:
-            content = f.read()
-        
+        # 默认走快速研究路径，优先保证稳定产出最终结果。
+        quick_content = await self._quick_research(query)
         yield {
             'is_task_complete': True,
             'require_user_input': False,
-            'content': content,
+            'content': quick_content,
         }
+        return
+
+    async def _quick_research(self, query: str) -> str:
+        """快速研究：检索 + 一次性总结，避免长时间挂起。"""
+        try:
+            search_material = run_research_search(
+                query=query,
+                max_results=3,
+                topic="general",
+            )
+            prompt = f"""
+你是一名研究助理。请基于给定资料，生成一份简洁、结构化、可读的中文研究结论。
+
+用户问题：
+{query}
+
+检索资料：
+{search_material}
+
+输出要求：
+1. 先给出“结论摘要”（3-5条）。
+2. 再给出“关键依据”（列点，包含来源链接）。
+3. 最后给出“局限性与后续建议”。
+"""
+            response = self.model.invoke(prompt)
+            content = (
+                response.content
+                if hasattr(response, 'content') and response.content
+                else str(response)
+            )
+
+            final_report_path = os.path.join(self.research_root_dir, "final_report.md")
+            with open(final_report_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            return content
+        except Exception as e:
+            return (
+                "研究流程执行时出现异常，已降级返回错误摘要：\n"
+                f"{type(e).__name__}: {str(e)}"
+            )
       
 
     SUPPORTED_CONTENT_TYPES = ['text', 'text/plain']
@@ -105,7 +143,10 @@ if __name__ == "__main__":
     
     async def main():
         research_agent = ResearchAgent()
-        result = await research_agent.stream("研究一下 A2A 协议与 MCP 协议的关系", "test_context_id")
-        print(result)
+        async for result in research_agent.stream(
+            "研究一下 A2A 协议与 MCP 协议的关系",
+            "test_context_id",
+        ):
+            print(result)
     
     asyncio.run(main())

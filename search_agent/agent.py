@@ -1,19 +1,166 @@
 import os
 import dotenv
+import re
+from urllib.parse import quote
+import logging
 
 from collections.abc import AsyncIterable
 from langchain.agents import create_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain.agents.structured_output import ToolStrategy
 from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import tool
 from pydantic import BaseModel
 from langchain_core.messages import AIMessage, ToolMessage
 from typing import Literal, Any
 from langchain_openai import ChatOpenAI
 from langchain.agents.middleware import SummarizationMiddleware
 from langgraph.checkpoint.memory import InMemorySaver
+import httpx
 
 dotenv.load_dotenv()
+logger = logging.getLogger(__name__)
+
+
+def _extract_city_from_query(query: str) -> str:
+    """从中文天气查询中提取城市名，提取失败时返回北京。"""
+    q = query.strip()
+    patterns = [
+        r'查询一下(.+?)的天气',
+        r'(.+?)天气',
+        r'(.+?)今天天气',
+        r'(.+?)明天天气',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, q)
+        if match:
+            city = match.group(1).strip(' ，,。！？?')
+            city = city.replace('帮我', '').replace('请', '').strip()
+            if city:
+                return city
+    return '北京'
+
+
+def _weather_lookup(query: str) -> str:
+    """使用 wttr.in 查询天气（免 key）。"""
+    city = _extract_city_from_query(query)
+    url = f'https://wttr.in/{quote(city)}'
+    params = {'format': 'j1', 'lang': 'zh'}
+    try:
+        response = httpx.get(url, params=params, timeout=12.0)
+        response.raise_for_status()
+        data = response.json()
+
+        current = (data.get('current_condition') or [{}])[0]
+        nearest = (data.get('nearest_area') or [{}])[0]
+        area_name = (
+            (nearest.get('areaName') or [{}])[0].get('value')
+            or city
+        )
+        weather_desc = (
+            (current.get('lang_zh') or [{}])[0].get('value')
+            or (current.get('weatherDesc') or [{}])[0].get('value')
+            or '未知'
+        )
+        temp_c = current.get('temp_C', 'N/A')
+        feels_like = current.get('FeelsLikeC', 'N/A')
+        humidity = current.get('humidity', 'N/A')
+        wind = current.get('windspeedKmph', 'N/A')
+
+        return (
+            f'{area_name} 当前天气：{weather_desc}，气温 {temp_c}°C，'
+            f'体感 {feels_like}°C，湿度 {humidity}%，风速 {wind} km/h。'
+        )
+    except Exception as e:
+        return f'天气查询失败（{city}）：{str(e)}'
+
+
+@tool(parse_docstring=True)
+def query_weather(query: str) -> str:
+    """查询天气信息（免 API key）。
+
+    Args:
+        query: 天气查询语句，例如“帮我查询一下北京的天气”
+
+    Returns:
+        当前天气的可读文本
+    """
+    return _weather_lookup(query)
+
+
+@tool(parse_docstring=True)
+def web_search_fallback(query: str, max_results: int = 5) -> str:
+    """当 MCP 工具不可用时的网页搜索兜底工具。
+
+    Args:
+        query: 搜索关键词
+        max_results: 最多返回条数
+
+    Returns:
+        搜索结果摘要文本
+    """
+    params = {
+        'q': query,
+        'format': 'json',
+        'no_html': 1,
+        'skip_disambig': 1,
+    }
+    try:
+        response = httpx.get(
+            'https://api.duckduckgo.com/',
+            params=params,
+            timeout=12.0,
+        )
+        response.raise_for_status()
+        payload = response.json()
+
+        items = []
+        abstract = payload.get('AbstractText')
+        if abstract:
+            items.append(
+                {
+                    'title': payload.get('Heading') or query,
+                    'url': payload.get('AbstractURL') or '',
+                    'snippet': abstract,
+                }
+            )
+
+        related = payload.get('RelatedTopics') or []
+        for topic in related:
+            if len(items) >= max_results:
+                break
+            if isinstance(topic, dict) and 'Text' in topic:
+                items.append(
+                    {
+                        'title': topic.get('Text', '').split(' - ')[0],
+                        'url': topic.get('FirstURL', ''),
+                        'snippet': topic.get('Text', ''),
+                    }
+                )
+            elif isinstance(topic, dict) and 'Topics' in topic:
+                for sub in topic.get('Topics', []):
+                    if len(items) >= max_results:
+                        break
+                    if isinstance(sub, dict) and 'Text' in sub:
+                        items.append(
+                            {
+                                'title': sub.get('Text', '').split(' - ')[0],
+                                'url': sub.get('FirstURL', ''),
+                                'snippet': sub.get('Text', ''),
+                            }
+                        )
+
+        if not items:
+            return f'未检索到“{query}”的有效结果。'
+
+        lines = [f'查询“{query}”的结果：']
+        for idx, item in enumerate(items[:max_results], start=1):
+            lines.append(
+                f'{idx}. {item["title"]}\n链接: {item["url"]}\n摘要: {item["snippet"]}'
+            )
+        return '\n\n'.join(lines)
+    except Exception as e:
+        return f'搜索兜底工具执行失败：{str(e)}'
 
 class ResponseFormat(BaseModel):
     """规定返回给用户信息的格式"""
@@ -54,39 +201,12 @@ class SearchAgent:
                 temperature=0.8,
                 api_key=os.getenv("DEEPSEEK_API_KEY"),
                 base_url=os.getenv("DEEPSEEK_BASE_URL"),
+                timeout=120,
             )
-        
-        # 创建MCP客户端连接到搜索服务器
-        mcp_client = MultiServerMCPClient(
-            {
-                "search_server": {
-                    "url": "http://localhost:8004",
-                    "transport": "streamable_http",
-                }
-            }
-        )
-        
-        # 异步获取工具
-        import asyncio
-        try:
-            # 检查是否已有事件循环在运行
-            try:
-                loop = asyncio.get_running_loop()
-                # 如果有运行中的循环，在另一个线程中执行
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(asyncio.run, mcp_client.get_tools())
-                    tools = future.result(timeout=10)
-            except RuntimeError:
-                # 没有运行中的循环，创建新的
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                tools = loop.run_until_complete(mcp_client.get_tools())
-                loop.close()
-        except Exception as e:
-            print(f"警告: 无法连接到MCP服务器: {e}")
-            tools = []
-        
+
+        tools = [query_weather, web_search_fallback]
+        tools.extend(self._load_mcp_tools())
+
         self.agent = create_agent(
             model=llm,
             system_prompt=self.system_prompt + self.format_instruction,
@@ -100,8 +220,64 @@ class SearchAgent:
             response_format=ToolStrategy(ResponseFormat)
         )
 
+    def _load_mcp_tools(self):
+        """尝试加载 MCP 工具，失败时自动降级。"""
+        enable_mcp_client = (
+            os.getenv('ENABLE_SEARCH_MCP_CLIENT', 'false').lower() == 'true'
+        )
+        if not enable_mcp_client:
+            return []
+
+        mcp_url = os.getenv('MCP_SEARCH_SERVER_URL', 'http://127.0.0.1:8004/mcp')
+        mcp_client = MultiServerMCPClient(
+            {
+                "search_server": {
+                    "url": mcp_url,
+                    "transport": "streamable_http",
+                }
+            }
+        )
+
+        import asyncio
+        try:
+            try:
+                loop = asyncio.get_running_loop()
+                import concurrent.futures
+
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(asyncio.run, mcp_client.get_tools())
+                    return future.result(timeout=10)
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                tools = loop.run_until_complete(mcp_client.get_tools())
+                loop.close()
+                return tools
+        except Exception as e:
+            logger.warning(f"无法连接到MCP服务器({mcp_url}): {e}")
+            return []
+
+    @staticmethod
+    def _is_weather_query(query: str) -> bool:
+        keywords = ('天气', '温度', '下雨', '降雨', '气温')
+        return any(k in query for k in keywords)
+
     # 2. 定义信息处理方法
     async def stream(self, query, context_id) -> AsyncIterable[dict[str, Any]]:
+        # 天气查询优先走本地稳定链路，避免外部 MCP 不可用导致失败。
+        if self._is_weather_query(query):
+            yield {
+                'is_task_complete': False,
+                'require_user_input': False,
+                'content': '正在查询天气信息...',
+            }
+            yield {
+                'is_task_complete': True,
+                'require_user_input': False,
+                'content': _weather_lookup(query),
+            }
+            return
+
         config : RunnableConfig = {'configurable' : {"thread_id" : context_id, "recursion_limit": 1000}}
         # 2.1 异步流式调用
         async for chunk in self.agent.astream(

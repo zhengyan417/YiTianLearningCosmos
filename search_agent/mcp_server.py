@@ -3,25 +3,27 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import json
 import requests
-from urllib.parse import quote_plus
+import os
 from datetime import datetime
 from typing import List, Dict, Optional
 
 from mcp.server.lowlevel import server
 
 # 创建 MCP 服务器
+mcp_host = os.getenv("SEARCH_MCP_HOST", "127.0.0.1")
+mcp_port = int(os.getenv("SEARCH_MCP_PORT", "8004"))
 mcp = FastMCP("Search Agent Server",
               debug=True,
-              host="127.0.0.0",
-              port=8004)
+              host=mcp_host,
+              port=mcp_port)
 
 # 数据库连接配置
 DB_CONFIG = {
-    "dbname": "search_agent_database",
-    "user": "postgres",
-    "password": "postgres",
-    "host": "localhost",
-    "port": "5432"
+    "dbname": os.getenv("SEARCH_DB_NAME", "search_agent_database"),
+    "user": os.getenv("SEARCH_DB_USER", "postgres"),
+    "password": os.getenv("SEARCH_DB_PASSWORD", "postgres"),
+    "host": os.getenv("SEARCH_DB_HOST", "localhost"),
+    "port": os.getenv("SEARCH_DB_PORT", "5432")
 }
 
 # 百度搜索配置
@@ -317,5 +319,5 @@ def log_user_query(username: str, query_text: str, query_type: str = "general") 
 if __name__ == "__main__":
     # 本地测试
     print("启动Search Agent MCP服务器...")
-    print("服务器将在 127.0.0.0:8004 上监听")
+    print(f"服务器将在 {mcp_host}:{mcp_port} 上监听")
     mcp.run()

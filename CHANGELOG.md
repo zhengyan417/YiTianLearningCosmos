@@ -71,3 +71,24 @@
 - `code_agent`、`research_agent`、`rag_agent` 等入口继续改为包内绝对导入，兼容多工作目录运行
 - 新增 CI/质量门禁：`.github/workflows/ci.yml`（ruff/mypy/pytest）、`.pre-commit-config.yaml`，并在 `pyproject.toml` 写入 ruff 配置
 
+## [0.4.0] - 2026-03-23
+### 新增
+- 新增端到端全流程测试脚本 `tests/full_project_a2a_test.py`：自动发现虚拟环境、启动 5 个 A2A 服务端、执行 CLI 多轮对话、执行 Host 链路验证、执行 `pytest`，并输出 `summary.json` 汇总。
+- 新增 Host 链路 E2E 脚本 `tests/e2e_host_chains.py`：覆盖跨 Agent 调度、文件工件传递、搜索与研究链路联调。
+- Search Agent 新增本地兜底工具：天气查询（`wttr.in`）与网页检索兜底（DuckDuckGo），在 MCP 不可用时仍可提供结果。
+- Host Agent 新增并行分发能力 `send_messages_parallel`，支持一次请求并发调用多个远程智能体。
+
+### 修改
+- 完整更新 README：补充“测试与验证”“全流程测试产物”“日志治理与清理”章节，并更新目录结构说明。
+- Search Agent 启动流程支持按需后台拉起 MCP 服务（`AUTO_START_SEARCH_MCP`），并支持通过环境变量开关 MCP 客户端（`ENABLE_SEARCH_MCP_CLIENT`）。
+- Search MCP Server 配置改为环境变量驱动（主机、端口、数据库连接），减少硬编码。
+- Research Agent 改为更稳定的快速研究路径（检索+总结），并在未配置 `RESEARCH_FILE_PATH` 时自动回退到默认 `backend` 目录。
+- 远程通信与会话管理增强：Host Agent 增加按 Agent 会话隔离、按 Agent 锁、附件自动识别与自动转发（含 artifact 回传附件）能力。
+- `.env.example` 补充搜索/研究相关配置项（`TAVILY_API_KEY`、`MCP_SEARCH_SERVER_URL`、`AUTO_START_SEARCH_MCP`、`ENABLE_SEARCH_MCP_CLIENT`），并修正研究路径变量拼写。
+- `uv.lock` 同步更新依赖元数据，补充 `core/server/client` 可选依赖分组。
+
+### 修复
+- 修复 A2A 监控日志在运行期切换 `log_file` 后无法正确写入的问题：`core/a2a_monitor.py` 新增 handler 自校正逻辑（`_ensure_file_handler`）。
+- 修复重试装饰器测试覆盖不足问题：`tests/test_retry_decorator.py` 增加“持续失败”场景并校验重试次数，确保 `retry_on_network` 超限行为可验证。
+- 修复 Search/Research 执行器异常处理导致链路中断的问题：异常时改为返回可读错误 artifact，避免直接抛出内部错误中断会话。
+- 修复远程 Agent Card 获取失败时可能影响整体初始化的问题：Host Agent 改为单 Agent 失败隔离，不阻断其余可用智能体注册。

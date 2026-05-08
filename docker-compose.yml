@@ -1,0 +1,170 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: yitian-postgres
+    environment:
+      POSTGRES_DB: ${SEARCH_DB_NAME:-search_agent_database}
+      POSTGRES_USER: ${SEARCH_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${SEARCH_DB_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${SEARCH_DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./search_agent/init_database.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SEARCH_DB_USER:-postgres} -d ${SEARCH_DB_NAME:-search_agent_database}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  file-parse-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yitian-file-parse-agent
+    env_file:
+      - .env
+    environment:
+      AGENT_MODULE: file_parse_agent
+      HOST: 0.0.0.0
+      PORT: 10001
+      FILE_PARSE_AGENT_URL: http://file-parse-agent:10001
+      CODE_AGENT_URL: http://code-agent:10002
+      RAG_AGENT_URL: http://rag-agent:10003
+      SEARCH_AGENT_URL: http://search-agent:10004
+      RESEARCH_AGENT_URL: http://research-agent:10005
+      SEARCH_DB_HOST: postgres
+    ports:
+      - "10001:10001"
+    restart: unless-stopped
+
+  code-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yitian-code-agent
+    env_file:
+      - .env
+    environment:
+      AGENT_MODULE: code_agent
+      HOST: 0.0.0.0
+      PORT: 10002
+      FILE_PARSE_AGENT_URL: http://file-parse-agent:10001
+      CODE_AGENT_URL: http://code-agent:10002
+      RAG_AGENT_URL: http://rag-agent:10003
+      SEARCH_AGENT_URL: http://search-agent:10004
+      RESEARCH_AGENT_URL: http://research-agent:10005
+      SEARCH_DB_HOST: postgres
+    ports:
+      - "10002:10002"
+    restart: unless-stopped
+
+  search-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yitian-search-agent
+    env_file:
+      - .env
+    environment:
+      AGENT_MODULE: search_agent
+      HOST: 0.0.0.0
+      PORT: 10004
+      FILE_PARSE_AGENT_URL: http://file-parse-agent:10001
+      CODE_AGENT_URL: http://code-agent:10002
+      RAG_AGENT_URL: http://rag-agent:10003
+      SEARCH_AGENT_URL: http://search-agent:10004
+      RESEARCH_AGENT_URL: http://research-agent:10005
+      SEARCH_DB_HOST: postgres
+      AUTO_START_SEARCH_MCP: ${AUTO_START_SEARCH_MCP:-false}
+      ENABLE_SEARCH_MCP_CLIENT: ${ENABLE_SEARCH_MCP_CLIENT:-false}
+      MCP_SEARCH_SERVER_URL: ${MCP_SEARCH_SERVER_URL:-http://127.0.0.1:8004/mcp}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "10004:10004"
+    restart: unless-stopped
+
+  research-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yitian-research-agent
+    env_file:
+      - .env
+    environment:
+      AGENT_MODULE: research_agent
+      HOST: 0.0.0.0
+      PORT: 10005
+      FILE_PARSE_AGENT_URL: http://file-parse-agent:10001
+      CODE_AGENT_URL: http://code-agent:10002
+      RAG_AGENT_URL: http://rag-agent:10003
+      SEARCH_AGENT_URL: http://search-agent:10004
+      RESEARCH_AGENT_URL: http://research-agent:10005
+      SEARCH_DB_HOST: postgres
+      RESEARCH_FILE_PATH: /app/research_agent/backend
+    volumes:
+      - research_data:/app/research_agent/backend
+    ports:
+      - "10005:10005"
+    restart: unless-stopped
+
+  host-agent-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yitian-host-agent-web
+    env_file:
+      - .env
+    environment:
+      FILE_PARSE_AGENT_URL: http://file-parse-agent:10001
+      CODE_AGENT_URL: http://code-agent:10002
+      RAG_AGENT_URL: http://rag-agent:10003
+      SEARCH_AGENT_URL: http://search-agent:10004
+      RESEARCH_AGENT_URL: http://research-agent:10005
+    depends_on:
+      - file-parse-agent
+      - code-agent
+      - search-agent
+      - research-agent
+    working_dir: /app/a2a_client
+    command: ["sh", "-c", "adk web --host 0.0.0.0 --port ${CLIENT_WEB_PORT:-8030}"]
+    ports:
+      - "${CLIENT_WEB_PORT:-8030}:${CLIENT_WEB_PORT:-8030}"
+    restart: unless-stopped
+
+  # 仅使用本地嵌入模型检索，生成由 DashScope API 负责，不再挂载本地 LLM
+  rag-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yitian-rag-agent
+    profiles:
+      - rag
+    env_file:
+      - .env
+    environment:
+      AGENT_MODULE: rag_agent
+      HOST: 0.0.0.0
+      PORT: 10003
+      FILE_PARSE_AGENT_URL: http://file-parse-agent:10001
+      CODE_AGENT_URL: http://code-agent:10002
+      RAG_AGENT_URL: http://rag-agent:10003
+      SEARCH_AGENT_URL: http://search-agent:10004
+      RESEARCH_AGENT_URL: http://research-agent:10005
+      SEARCH_DB_HOST: postgres
+      EMBED_PATH: ${EMBED_PATH:-/models/embed}
+      STORAGE_DIR: ${STORAGE_DIR:-/app/storage}
+    volumes:
+      - ${RAG_EMBED_MODEL_DIR:-./models/embed}:/models/embed:ro
+      - ${RAG_STORAGE_DIR:-./storage}:/app/storage
+    ports:
+      - "10003:10003"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  research_data:

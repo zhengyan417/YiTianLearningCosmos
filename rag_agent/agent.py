@@ -128,21 +128,16 @@ class DoctorRAGWorkflow(Workflow):
             api_key=dashscope_api_key,
         ) # 大语言模型
         
-        # 验证RAG引擎配置
-        llm_model_path = os.getenv('LLM_MODEL_PATH')
+        # 初始化 RAG 检索引擎（仅需嵌入模型路径，不加载本地 LLM）
         embed_model_path = os.getenv('EMBED_PATH')
         storage_dir = os.getenv('STORAGE_DIR', './storage')
-        
+
         self._rag_engine = RAGQueryEngine(
-            llm_model_path=llm_model_path,
             embed_model_path=embed_model_path,
             storage_dir=storage_dir,
-            streaming=False,
             similarity_top_k=3,
-            with_rerank=False,
             with_mmr=True,
             mmr_threshold=0.5,
-            with_query_transform=False,
         ) # RAG查询引擎
         
         self._system_prompt_template = """ 

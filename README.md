@@ -6,6 +6,8 @@
 
 一个基于 A2A 协议的多智能体学习辅助手册，面向教学与研究场景，提供文件解析、代码生成、RAG 检索、通用检索与科研助手等能力，并内置通信审计与统一错误处理体系。
 
+![查看设计图](./assets/architecture.png)
+
 ## 核心特性
 - A2A 互通：客户端与多服务端智能体统一采用 A2A 协议，支持 JSON-RPC、HTTP JSON 传输与推送通知。
 - 多模态输入：文本、文件（PDF、DOC、图片等）均可作为任务输入。
@@ -108,25 +110,6 @@ log_manual_communication(
 )
 ```
 
-## 测试与验证
-- 单元测试：`tests/test_settings.py`、`tests/test_retry_decorator.py`、`tests/test_monitor_logging.py`。
-- Host 链路 E2E：`tests/e2e_host_chains.py`（可自动拉起服务并验证跨 Agent 调用链路）。
-- 全流程脚本：`tests/full_project_a2a_test.py`（自动发现虚拟环境、启动 5 个服务端、执行 CLI 多轮对话、执行 Host 链路测试、执行 pytest，并输出汇总日志）。
-
-### 本地执行（推荐顺序）
-```bash
-# 1) 激活虚拟环境
-.venv\Scripts\activate
-
-# 2) 基础测试
-pytest -q
-
-# 3) Host 链路联调
-python tests/e2e_host_chains.py
-
-# 4) 完整端到端（含日志归档）
-python tests/full_project_a2a_test.py
-```
 
 ### 全流程测试产物
 - 输出目录：`logs/full_project_test/<timestamp>/`
@@ -180,3 +163,66 @@ python tests/full_project_a2a_test.py
 
 ## 许可证
 本项目使用 MIT License，详见 [LICENSE](LICENSE)。
+
+
+## Docker Compose
+
+本项目提供完整的 `docker-compose.yml`，支持一键启动所有服务。
+
+### 包含服务
+
+- `file-parse-agent` -> `http://localhost:10001`
+- `code-agent` -> `http://localhost:10002`
+- `search-agent` -> `http://localhost:10004`
+- `research-agent` -> `http://localhost:10005`
+- `postgres` -> `localhost:5432`
+
+### 关于 RAG 智能体
+
+`rag_agent` 依赖本地模型文件，默认不随 `docker compose up` 启动，需通过 `rag` profile 单独启用。
+
+### 使用步骤
+
+1. 复制环境变量文件：
+
+```bash
+cp .env.example .env
+```
+
+2. 填写以下 key：
+
+- `DEEPSEEK_API_KEY`
+- `DASHSCOPE_API_KEY`
+- `LLAMA_CLOUD_API_KEY`
+
+3. 启动所有服务：
+
+```bash
+docker compose up --build
+```
+
+4. 同时启动 RAG 智能体：
+
+```bash
+docker compose --profile rag up --build
+```
+
+### RAG 本地模型说明
+
+启用 `rag` profile 时，需挂载以下本地目录：
+
+- `${RAG_LLM_MODEL_DIR}` 挂载至 `./models/llm`
+- `${RAG_EMBED_MODEL_DIR}` 挂载至 `./models/embed`
+- `${RAG_STORAGE_DIR}` 挂载至 `./storage`
+
+并在 `.env` 中配置：
+
+- `LLM_MODEL_PATH=/models/llm`
+- `EMBED_PATH=/models/embed`
+- `STORAGE_DIR=/app/storage`
+
+### 注意事项
+
+- `search-agent` 依赖 compose 内置的 PostgreSQL。
+- `research-agent` 使用独立 volume 存储沙盒文件，重启后数据保留。
+- 暂未包含 ADK Web 客户端及 Host Agent，如需使用请监听 `8030` 端口。

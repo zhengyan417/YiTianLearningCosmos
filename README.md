@@ -178,5 +178,68 @@ python tests/full_project_a2a_test.py
 - 流式一致性：推荐事件端点类型遵循 `core/streaming.py` 的常量，日志自动带协议版本便于排查。
 - 质量门禁：已提供 `.github/workflows/ci.yml`（ruff/mypy/pytest）和 `.pre-commit-config.yaml`；本地可运行 `ruff check .`、`mypy .`、`pytest -q`。
 
+## Docker Compose
+
+通过 `docker-compose.yml` 一键启动全部服务：**5 个远程智能体 + Host Agent Web 客户端 + PostgreSQL**。
+
+### 包含服务
+
+| 服务 | 容器名 | 对外端口 |
+| --- | --- | --- |
+| 文件解析智能体 | `yitian-file-parse-agent` | 10001 |
+| 代码智能体 | `yitian-code-agent` | 10002 |
+| RAG 智能体（可选 profile） | `yitian-rag-agent` | 10003 |
+| 搜索智能体 | `yitian-search-agent` | 10004 |
+| 研究智能体 | `yitian-research-agent` | 10005 |
+| Host Agent Web 客户端 | `yitian-host-agent` | **8030** |
+| PostgreSQL | `yitian-postgres` | 5432 |
+
+### 使用步骤
+
+1. 复制环境变量文件并填写 API Key：
+
+```bash
+cp .env.example .env
+# 必填：DEEPSEEK_API_KEY、DASHSCOPE_API_KEY、LLAMA_CLOUD_API_KEY
+```
+
+2. 一键启动（首次运行会自动构建镜像）：
+
+```bash
+docker compose up --build
+```
+
+3. 打开浏览器访问 Web 客户端：
+
+```
+http://localhost:8030
+```
+
+Host Agent 会自动发现并连接所有远程智能体，可直接开始对话。
+
+### 同时启动 RAG 智能体
+
+RAG 智能体依赖本地模型文件，默认不启动，通过 `rag` profile 单独启用：
+
+```bash
+docker compose --profile rag up --build
+```
+
+需在 `.env` 中配置本地模型目录：
+
+```env
+RAG_LLM_MODEL_DIR=./models/llm
+RAG_EMBED_MODEL_DIR=./models/embed
+RAG_STORAGE_DIR=./storage
+```
+
+### 注意事项
+
+- 首次 `--build` 时间较长（需安装 PyTorch 等依赖），后续启动无需重新构建。
+- `search-agent` 依赖 compose 内置的 PostgreSQL，会等待其健康检查通过后再启动。
+- `host-agent` 会等待 4 个远程智能体全部就绪后再启动，避免连接失败。
+- `research-agent` 使用独立 Docker volume 持久化沙盒文件，重启后数据保留。
+- Docker 内部服务间通过容器名通信，`docker-compose.yml` 已自动覆盖 `.env` 中的 `localhost` URL。
+
 ## 许可证
 本项目使用 MIT License，详见 [LICENSE](LICENSE)。

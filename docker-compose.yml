@@ -1,0 +1,172 @@
+# 依天学境（YiTian Learning Cosmos）— Docker Compose 编排
+#
+# 一键启动所有服务：
+#   docker compose up --build
+#
+# 同时启动 RAG 智能体（需本地模型文件）：
+#   docker compose --profile rag up --build
+#
+# 前提：将 .env.example 复制为 .env 并填写 API Key
+#   cp .env.example .env
+
+name: yitian-learning-cosmos
+
+services:
+
+  # ── PostgreSQL（搜索智能体依赖）────────────────────────────────────────────
+  postgres:
+    image: postgres:15
+    container_name: yitian-postgres
+    environment:
+      POSTGRES_DB: search_agent_database
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./search_agent/init_database.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── 文件解析智能体 :10001 ───────────────────────────────────────────────────
+  file-parse-agent:
+    build: .
+    container_name: yitian-file-parse-agent
+    env_file: .env
+    environment:
+      AGENT_MODULE: file_parse_agent
+      HOST: 0.0.0.0
+      PORT: "10001"
+    ports:
+      - "10001:10001"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket,sys;s=socket.socket();s.settimeout(3);sys.exit(s.connect_ex(('localhost',10001)))\""]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  # ── 代码智能体 :10002 ──────────────────────────────────────────────────────
+  code-agent:
+    build: .
+    container_name: yitian-code-agent
+    env_file: .env
+    environment:
+      AGENT_MODULE: code_agent
+      HOST: 0.0.0.0
+      PORT: "10002"
+    ports:
+      - "10002:10002"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket,sys;s=socket.socket();s.settimeout(3);sys.exit(s.connect_ex(('localhost',10002)))\""]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  # ── RAG 智能体 :10003（可选 profile，需本地模型文件）──────────────────────────
+  rag-agent:
+    build: .
+    container_name: yitian-rag-agent
+    env_file: .env
+    environment:
+      AGENT_MODULE: rag_agent
+      HOST: 0.0.0.0
+      PORT: "10003"
+      LLM_MODEL_PATH: /models/llm
+      EMBED_PATH: /models/embed
+      STORAGE_DIR: /app/storage
+    ports:
+      - "10003:10003"
+    volumes:
+      - ${RAG_LLM_MODEL_DIR:-./models/llm}:/models/llm:ro
+      - ${RAG_EMBED_MODEL_DIR:-./models/embed}:/models/embed:ro
+      - ${RAG_STORAGE_DIR:-./storage}:/app/storage
+    profiles:
+      - rag
+    restart: unless-stopped
+
+  # ── 搜索智能体 :10004 ─────────────────────────────────────────────────────
+  search-agent:
+    build: .
+    container_name: yitian-search-agent
+    env_file: .env
+    environment:
+      AGENT_MODULE: search_agent
+      HOST: 0.0.0.0
+      PORT: "10004"
+      SEARCH_DB_HOST: postgres   # 覆盖 .env 中的 localhost，使用容器名
+      SEARCH_DB_PORT: "5432"
+    ports:
+      - "10004:10004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket,sys;s=socket.socket();s.settimeout(3);sys.exit(s.connect_ex(('localhost',10004)))\""]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  # ── 研究智能体 :10005 ─────────────────────────────────────────────────────
+  research-agent:
+    build: .
+    container_name: yitian-research-agent
+    env_file: .env
+    environment:
+      AGENT_MODULE: research_agent
+      HOST: 0.0.0.0
+      PORT: "10005"
+      RESEARCH_FILE_PATH: /app/research_agent/backend
+    ports:
+      - "10005:10005"
+    volumes:
+      - research_backend:/app/research_agent/backend
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket,sys;s=socket.socket();s.settimeout(3);sys.exit(s.connect_ex(('localhost',10005)))\""]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  # ── Host Agent Web 客户端 :8030 ────────────────────────────────────────────
+  # 统一访问入口，浏览器打开 http://localhost:8030 即可与所有智能体交互
+  host-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.adk
+    container_name: yitian-host-agent
+    env_file: .env
+    environment:
+      # 覆盖 .env 中的 localhost URL，指向 Docker 内部服务名
+      FILE_PARSE_AGENT_URL: http://file-parse-agent:10001
+      CODE_AGENT_URL: http://code-agent:10002
+      RAG_AGENT_URL: http://rag-agent:10003
+      SEARCH_AGENT_URL: http://search-agent:10004
+      RESEARCH_AGENT_URL: http://research-agent:10005
+    ports:
+      - "8030:8030"
+    depends_on:
+      file-parse-agent:
+        condition: service_healthy
+      code-agent:
+        condition: service_healthy
+      search-agent:
+        condition: service_healthy
+      research-agent:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  research_backend:

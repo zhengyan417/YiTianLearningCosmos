@@ -1,0 +1,25 @@
+# syntax=docker/dockerfile:1
+# Host Agent（Google ADK Web 客户端）专用镜像
+# 在 Dockerfile 基础上额外安装 [client] 依赖（asyncclick + google-adk）
+FROM python:3.12-slim
+
+WORKDIR /app
+COPY . /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir ".[core,server,client]"
+
+# 确保项目根目录在 Python 路径中，保证 core/ 等模块可被正常导入
+ENV PYTHONPATH=/app
+ENV HOST=0.0.0.0
+ENV PORT=8030
+
+# adk web 需在 a2a_client/ 目录下运行，ADK 会自动发现 client_host_agent 包
+WORKDIR /app/a2a_client
+
+CMD ["sh", "-c", "adk web --host ${HOST} --port ${PORT}"]

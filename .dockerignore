@@ -1,3 +1,50 @@
+# Git
+.git
+.gitignore
+
+# Python
+.venv
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+.eggs
+dist
+build
+
+# 测试 & 缓存
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov/
+
+# 日志（运行时生成，不打入镜像）
+logs/
+
+# 环境变量（含密钥，绝不打入镜像）
+.env
+
+# 本地模型（体积巨大，通过 volume 挂载）
+models/
+storage/
+
+# Claude Code 工作目录
+.claude/
+
+# IDE
+.vscode/
+.idea/
+
+# 生成文件
+*.png
+*.jpg
+*.jpeg
+architecture_preview.html
+gen_architecture.py
+
 .git
 .gitignore
 .venv

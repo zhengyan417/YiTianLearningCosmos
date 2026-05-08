@@ -178,9 +178,11 @@
   },
   "active": "391bba1090bbbf16",
   "lastOpenFiles": [
+    "architecture.png",
+    "architecture.md",
+    "Dockerfile.adk",
     "assets/architecture.png",
     "assets/Gemini_Generated_Image_57ypde57ypde57yp.png",
-    "architecture.md",
     "1.md"
   ]
 }
